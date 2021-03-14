@@ -47,9 +47,9 @@ public class AnimationObject : MonoBehaviour
         return this;
     }
 
-    public AnimationObject OnComplete(Action complete)
+    public AnimationObject OnComplete(Action complete, float delay = 0)
     {
-        AddNode(new AnimNode(-1), complete);
+        AddNode(new AnimNode(-1), () => { OnCompleted(delay); complete(); });
         return this;
     }
 
@@ -64,12 +64,19 @@ public class AnimationObject : MonoBehaviour
     private void PlayClip(AnimNode node, float fadeTime)
     {
         _headNode = node;
-        _animation.CrossFade(_animNames[_headNode.index], fadeTime);
-        StartCoroutine(RunTimer(GetLength(_headNode.index) - fadeTime));
-        Debug.Log("Current Play " + _animNames[_headNode.index] + " Time " + Time.time);
+        if (_headNode.index >= 0)
+        {
+            _animation.CrossFade(_animNames[_headNode.index], fadeTime);
+            StartCoroutine(RunTimer(GetLength(_headNode.index) - fadeTime));
+            Debug.Log("Current Play " + _animNames[_headNode.index] + " Time " + Time.time);
+        }
+        else
+        {
+            StartCoroutine(RunTimer(fadeTime));
+        }
     }
 
-    private void OnCompleted(float fadeTime = 0)
+    private void OnCompleted(float fadeTime)
     {
         PlayClip(_headNode.next, fadeTime);
     }
@@ -126,7 +133,7 @@ public class AnimationObject : MonoBehaviour
     [ContextMenu("Go")]
     public void Go()
     {
-        Animate(0).NextPlay(1).NextPlay(2).NextPlay(3).OnComplete(() => Debug.Log("Completed " + Time.time));
+        Animate(0).NextPlay(1).OnComplete(() => Debug.Log("Completed " + Time.time), 1f).NextPlay(2).NextPlay(3).OnComplete(() => Debug.Log("Completed " + Time.time));
     }
 
     [ContextMenu("FadeGo")]
