@@ -338,3 +338,8 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+/Temp
+/Library
+/AnimationObject.sln
+/animationObject.unitypackage
+/Assembly-CSharp.csproj
