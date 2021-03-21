@@ -5,34 +5,22 @@ using UnityEngine;
 [AddComponentMenu("Grover Gaming/Utility/Framed Animation")]
 public class FramedAnimation : MonoBehaviour
 {
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public string _propertyName = "_MainTex";
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public int _framesPerSecond = 30;
+    [SerializeField] private string _propertyName = "_MainTex";
+    [SerializeField] private int _framesPerSecond = 30;
     private const string UseProperty = "Direct use of this field is not recommended. Use the associated property instead.";
     private const float Epsilon = 0.001f;
     private const string UpdateFrameMethodName = "UpdateFrame";
     private const string RestartLoopMethodName = "RestartLoop";
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public bool _playOnAwake;
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public bool _loop;
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public float _loopDelayMinimum;
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public float _loopDelayMaximum;
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public Renderer _target;
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public int _materialIndex;
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public bool _sharedMaterial;
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public int _startingFrame;
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public bool _randomStartingFrame;
-    //[Obsolete("Direct use of this field is not recommended. Use the associated property instead.")]
-    public Texture2D[] _frames;
+    [SerializeField] private bool _playOnAwake;
+    [SerializeField] private bool _loop;
+    [SerializeField] private float _loopDelayMinimum;
+    [SerializeField] private float _loopDelayMaximum;
+    [SerializeField] private Renderer _target;
+    [SerializeField] private int _materialIndex;
+    [SerializeField] private bool _sharedMaterial;
+    [SerializeField] private int _startingFrame;
+    [SerializeField] private bool _randomStartingFrame;
+    [SerializeField] private Texture2D[] _frames;
     private int _currentFrame;
     private Material _material;
 
@@ -365,7 +353,7 @@ public class FramedAnimation : MonoBehaviour
             }
             else
             {
-                InvokeRepeating("UpdateFrame", FrameDisplayTime, FrameDisplayTime);
+                InvokeRepeating(nameof(UpdateFrame), FrameDisplayTime, FrameDisplayTime);
                 if (!Loop)
                     return;
                 OnCompleted();
@@ -383,19 +371,19 @@ public class FramedAnimation : MonoBehaviour
             OnLoopCompleted();
             if ((double)LoopDelayMinimum <= 0.0 && (double)LoopDelayMaximum <= 0.0)
                 return;
-            CancelInvoke("UpdateFrame");
-            Invoke("RestartLoop", 0.0f);
+            CancelInvoke(nameof(UpdateFrame));
+            Invoke(nameof(RestartLoop), 0.0f);
         }
         if (CurrentFrame != EndingFrame)
             return;
-        CancelInvoke("UpdateFrame");
+        CancelInvoke(nameof(UpdateFrame));
         IsPlaying = false;
         OnCompleted();
     }
 
     protected virtual void RestartLoop()
     {
-        InvokeRepeating("UpdateFrame", (double)Math.Abs(LoopDelayMinimum - LoopDelayMaximum) >= 1.0 / 1000.0 ? UnityEngine.Random.Range(LoopDelayMinimum, LoopDelayMaximum) : LoopDelayMinimum, FrameDisplayTime);
+        InvokeRepeating(nameof(UpdateFrame), (double)Math.Abs(LoopDelayMinimum - LoopDelayMaximum) >= 1.0 / 1000.0 ? UnityEngine.Random.Range(LoopDelayMinimum, LoopDelayMaximum) : LoopDelayMinimum, FrameDisplayTime);
     }
 
     protected virtual void OnComplete()
@@ -407,7 +395,7 @@ public class FramedAnimation : MonoBehaviour
 
     protected virtual void OnStop()
     {
-        CancelInvoke("UpdateFrame");
+        CancelInvoke(nameof(UpdateFrame));
         IsPlaying = false;
     }
 
