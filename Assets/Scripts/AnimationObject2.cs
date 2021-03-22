@@ -17,7 +17,6 @@ public class ActionNode
     }
 }
 
-
 public class AnimationObject2 : MonoBehaviour
 {
     [SerializeField]
@@ -27,6 +26,7 @@ public class AnimationObject2 : MonoBehaviour
 
     private ActionNode _headNode;
     private ActionNode _tailNode;
+    private Coroutine _runTimer;
 
     public ActionNode Current { get { return _headNode; } }
 
@@ -54,7 +54,7 @@ public class AnimationObject2 : MonoBehaviour
     private void Animate(int animIndex)
     {
         _animation.Play(GetName(animIndex));
-        StartCoroutine(RunTimer(GetDuration(animIndex)));
+        StartTimer(GetDuration(animIndex));
         Debug.Log("Animate " + GetName(animIndex) + " " + Time.deltaTime);
     }
 
@@ -86,10 +86,48 @@ public class AnimationObject2 : MonoBehaviour
         return false;
     }
 
+    private void StartTimer(float duration)
+    {
+        _start = true;
+        _time = 0.0f;
+        _duration = duration;
+        //StopTimer();
+        //_runTimer = StartCoroutine(RunTimer(duration));
+    }
+
+    private void StopTimer()
+    {
+        _start = false;
+        //if (_runTimer != null)
+        //{
+        //    StopCoroutine(_runTimer);
+        //    _runTimer = null;
+        //}
+    }
+
     private IEnumerator RunTimer(float duration)
     {
         yield return new WaitForComplete2(duration);
         _headNode.action?.Invoke();
+    }
+
+    private bool _start;
+    private float _time;
+    private float _duration;
+
+    private void Update()
+    {
+        if (_start)
+        {
+            if (_time < _duration)
+            {
+                _time += Time.deltaTime;
+                return;
+            }
+            _time = 0.0f;
+            _start = false;
+            _headNode.action?.Invoke();
+        }
     }
 
     #region Utility

@@ -284,10 +284,10 @@ Animation:
   serializedVersion: 3
   m_Animation: {fileID: 0}
   m_Animations:
-  - {fileID: 7400000, guid: 4067fc4fc845934478cbbcde9fcfeafa, type: 2}
-  - {fileID: 7400000, guid: 4e9624216a3d8dc4a86402b17a7ee51a, type: 2}
-  - {fileID: 7400000, guid: e6903c4a1ff91c14bacf38ca2508c282, type: 2}
-  - {fileID: 7400000, guid: 632eb84c9ec7e3447afd394023cc2126, type: 2}
+  - {fileID: 7400000, guid: 40eff448693f22d4d9e136d3975f6bf6, type: 2}
+  - {fileID: 7400000, guid: 1941dd8de08771b40a3da007beafc678, type: 2}
+  - {fileID: 7400000, guid: 9ad19065f25bf08469596be4f7d4d691, type: 2}
+  - {fileID: 7400000, guid: 1cc943d50598cc64286cab85021a9b0f, type: 2}
   m_WrapMode: 0
   m_PlayAutomatically: 0
   m_AnimatePhysics: 0
@@ -301,7 +301,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6320856860177217694}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 38a7b2489138ee946bf72e6389d8d5f1, type: 3}
+  m_Script: {fileID: 11500000, guid: 34f6341417ed75145aa2cfc5d329ec8d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _animation: {fileID: 6320856860177217695}
