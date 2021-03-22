@@ -1,22 +1,21 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
-public class AnimNode
+public class ActionNode
 {
-    public int index;
+    public int animIndex;
     public Action action;
-    public AnimNode next;
+    public ActionNode next;
 
-    public AnimNode(int index)
+    public ActionNode(int animIndex)
     {
-        this.index = index;
+        this.animIndex = animIndex;
+        this.action = null;
+        this.next = null;
     }
 }
 
-[RequireComponent(typeof(Animation))]
 public class AnimationObject : MonoBehaviour
 {
     [SerializeField]
@@ -24,122 +23,168 @@ public class AnimationObject : MonoBehaviour
     [SerializeField]
     private string[] _animNames;
 
-    private AnimNode _headNode;
-    private AnimNode _tailNode;
-    private AnimNode _actionNode;
-    private Coroutine _runTimeCoroutine;
-    private WaitForComplete _waitComplete;
+    private ActionNode _headNode;
+    private ActionNode _tailNode;
 
+    private bool _run;
+    private bool _loop;
+    private float _time;
+    private float _duration;
+
+    public ActionNode Current { get { return _headNode; } }
+
+
+    public AnimationObject Play(int animIndex, bool loop = false)
+    {
+        return Play(animIndex, 0.0f, loop);
+    }
+
+    public AnimationObject Play(int animIndex, float fade, bool loop = false)
+    {
+        CreateNode(animIndex);
+        Animate(animIndex, fade, loop);
+        return this;
+    }
+
+    public AnimationObject NextPlay(int animIndex, bool loop = false)
+    {
+        return NextPlay(animIndex, 0.0f, loop);
+    }
+
+    public AnimationObject NextPlay(int animIndex, float fade, bool loop = false)
+    {
+        AddNode(new ActionNode(animIndex), () => OnCompleted(fade, loop));
+        return this;
+    }
+
+    public AnimationObject OnComplete(Action complete, float fade = 0.0f)
+    {
+        AddNode(new ActionNode(-1), () => { complete(); OnCompleted(fade, false); });
+        return this;
+    }
+
+    private void Animate(int animIndex, float fade, bool loop)
+    {
+        if (animIndex >= 0 && animIndex < ClipCount)
+        {
+            SetLoop(animIndex, loop);
+            PlayClip(animIndex, fade);
+            StartTimer(GetDuration(animIndex) - fade, loop);
+            Debug.Log("Animate " + GetName(animIndex) + " " + Time.time);
+        }
+        else
+        {
+            StartTimer(fade, loop);
+        }
+    }
+
+    private void PlayClip(int animIndex, float fade)
+    {
+        _animation.CrossFade(GetName(animIndex), fade);
+    }
+
+    private void OnCompleted(float fade, bool loop)
+    {
+        if (!MoveNext()) return;
+        Animate(_headNode.animIndex, fade, loop);
+    }
+
+    private void CreateNode(int animIndex)
+    {
+        _headNode = _tailNode = new ActionNode(animIndex);
+    }
+
+    private void AddNode(ActionNode node, Action action)
+    {
+        _tailNode.action = action;
+        _tailNode.next = node;
+        _tailNode = _tailNode.next;
+    }
+
+    private bool MoveNext()
+    {
+        if (_headNode != null)
+        {
+            _headNode = _headNode.next;
+            return true;
+        }
+        return false;
+    }
+
+    private void StartTimer(float duration, bool loop)
+    {
+        _run = true;
+        _loop = loop;
+        _time = 0.0f;
+        _duration = duration;
+    }
+
+    private void StopTimer()
+    {
+        _run = false;
+        _loop = false;
+        var index = _headNode.animIndex;
+        if (index < 0 || index >= ClipCount) return;
+        SetAnimation(index, GetDuration(index));
+    }
+
+    private void StopLoop(float fade = 0.0f, bool nextLoop = false)
+    {
+        _run = false;
+        _loop = false;
+        var index = _headNode.animIndex;
+        if (index >= 0 && index < ClipCount)
+            SetAnimation(index, GetDuration(index));
+        _headNode.action?.Invoke();
+    }
+
+    private void Update()
+    {
+        #region Test
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            Play(0).OnComplete(() => Debug.Log("Play 0")).NextPlay(1, true).OnComplete(() => Debug.Log("Play 1")).NextPlay(2).OnComplete(() => Debug.Log("On Complete"));
+        }
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            StopLoop();
+        }
+        #endregion
+
+        if (!_run) return;
+        if (_loop || _time < _duration)
+        {
+            _time += Time.deltaTime;
+        }
+        else
+        {
+            _run = false;
+            _time = 0.0f;
+            _headNode.action?.Invoke();
+        }
+    }
+
+    #region Utility
 
     private void Reset()
     {
         _animation = GetComponent<Animation>();
-        _animNames = GetAnimationNames();
+        _animNames = GetNames();
     }
 
-    public AnimationObject Animate(int animIndex, float fadeTime = 0)
+    private string[] GetNames()
     {
-        Animate(animIndex, fadeTime, false);
-        return this;
-    }
-
-    public AnimationObject Animate(int animIndex, bool loop)
-    {
-        Animate(animIndex, 0.0f, loop);
-        return this;
-    }
-
-    public AnimationObject Animate(int animIndex, float fadeTime, bool loop)
-    {
-        PlayClip(_tailNode = _actionNode = new AnimNode(animIndex), fadeTime, loop);
-        return this;
-    }
-
-    public AnimationObject NextPlay(int animIndex, float fadeTime = 0)
-    {
-        NextPlay(animIndex, fadeTime, false);
-        return this;
-    }
-
-    public AnimationObject NextPlay(int animIndex, float fadeTime, bool loop)
-    {
-        AddNode(new AnimNode(animIndex), () => OnCompleted(fadeTime, loop));
-        return this;
-    }
-
-    public void StopLoop(int animIndex, bool complete)
-    {
-        SetAnimation(animIndex, complete ? GetLength(animIndex) : 0.0f);
-        if (_waitComplete != null) _waitComplete.Loop = false;
-    }
-
-    public AnimationObject OnComplete(Action complete, float delay = 0)
-    {
-        if (complete == null) return this;
-        AddNode(new AnimNode(-1), () => { OnCompleted(delay, false); complete(); });
-        return this;
-    }
-
-    private void AddNode(AnimNode node, Action callback)
-    {
-        _tailNode.next = node;
-        _tailNode = _tailNode.next;
-        _actionNode.action = callback;
-        _actionNode = _actionNode.next;
-    }
-
-    private void PlayClip(AnimNode node, float fadeTime, bool loop)
-    {
-        _headNode = node;
-        if (_headNode != null && _headNode.index >= 0)
-        {
-            if (loop) GetState(_headNode.index).wrapMode = WrapMode.Loop;
-            _animation.CrossFade(_animNames[_headNode.index], fadeTime);
-            StartRuntimer(GetLength(_headNode.index) - fadeTime, loop);
-            Debug.Log("Current Play " + _animNames[_headNode.index] + " Time " + Time.time);
-        }
-        else
-        {
-            StartRuntimer(fadeTime, loop);
-        }
-    }
-
-    private void OnCompleted(float fadeTime, bool loop)
-    {
-        PlayClip(_headNode.next, fadeTime, loop);
-    }
-
-    private void StartRuntimer(float duration, bool loop)
-    {
-        StopRunTimer();
-        _runTimeCoroutine = StartCoroutine(RunTimer(duration, loop));
-    }
-
-    private void StopRunTimer()
-    {
-        if (_runTimeCoroutine != null)
-        {
-            StopCoroutine(_runTimeCoroutine);
-            _runTimeCoroutine = null;
-        }
-    }
-
-    private IEnumerator RunTimer(float duration, bool loop)
-    {
-        _waitComplete = new WaitForComplete(duration, loop);
-        yield return _waitComplete;
-        _headNode.action?.Invoke();
-    }
-
-    #region Utility
-    private string[] GetAnimationNames()
-    {
-        List<string> strList = new List<string>();
+        var strList = new List<string>();
         foreach (AnimationState item in _animation)
         {
             strList.Add(item.name);
         }
         return strList.ToArray();
+    }
+
+    private string GetName(int animIndex)
+    {
+        return _animNames[animIndex];
     }
 
     public AnimationState GetState(int animIndex)
@@ -152,7 +197,7 @@ public class AnimationObject : MonoBehaviour
         return _animation[_animNames[animIndex]].clip;
     }
 
-    public float GetLength(int animIndex)
+    public float GetDuration(int animIndex)
     {
         return _animation[_animNames[animIndex]].length;
     }
@@ -160,6 +205,11 @@ public class AnimationObject : MonoBehaviour
     public void SetSpeed(int animIndex, float speed = 1.0f)
     {
         _animation[_animNames[animIndex]].speed = speed;
+    }
+
+    public void SetLoop(int animIndex, bool loop = false)
+    {
+        _animation[_animNames[animIndex]].wrapMode = loop ? WrapMode.Loop : WrapMode.Once;
     }
 
     public bool IsAnimating(int animIndex = 0)
@@ -172,17 +222,20 @@ public class AnimationObject : MonoBehaviour
         _animation.Stop();
         GetClip(animIndex).SampleAnimation(gameObject, time);
     }
+
+    public int ClipCount { get { return _animation.GetClipCount(); } }
+
     #endregion
 
     [ContextMenu("Go")]
     public void Go()
     {
-        Animate(0).NextPlay(1).OnComplete(() => Debug.Log("Completed " + Time.time), 1f).NextPlay(2).NextPlay(3).OnComplete(() => Debug.Log("Completed " + Time.time));
+        Play(0).OnComplete(() => Debug.Log("Play 0")).NextPlay(1, true).OnComplete(() => Debug.Log("Play 1")).NextPlay(2).OnComplete(() => Debug.Log("On Complete"));
     }
 
-    [ContextMenu("FadeGo")]
-    public void Fade()
+    [ContextMenu("Back")]
+    public void Back()
     {
-        Animate(0, 1f).NextPlay(1, 1f).NextPlay(2).NextPlay(3).OnComplete(() => Debug.Log("Completed " + Time.time));
+        StopLoop();
     }
 }
