@@ -27,6 +27,7 @@ public class AnimationObject : MonoBehaviour
     private ActionNode _tailNode;
 
     private bool _run;
+    private bool _pause;
     private bool _loop;
     private float _time;
     private float _duration;
@@ -59,7 +60,7 @@ public class AnimationObject : MonoBehaviour
 
     public AnimationObject OnComplete(Action complete, float fade = 0.0f)
     {
-        AddNode(new ActionNode(-1), () => { complete(); OnCompleted(fade, false); });
+        AddNode(new ActionNode(-1), () => { complete?.Invoke(); OnCompleted(fade, false); });
         return this;
     }
 
@@ -128,7 +129,7 @@ public class AnimationObject : MonoBehaviour
         SetAnimation(index, GetDuration(index));
     }
 
-    private void StopLoop(float fade = 0.0f, bool nextLoop = false)
+    private void StopLoop()
     {
         _run = false;
         _loop = false;
@@ -138,20 +139,32 @@ public class AnimationObject : MonoBehaviour
         _headNode.action?.Invoke();
     }
 
+    public void Pause( bool pause)
+    {
+        _pause = pause;
+        var index = _headNode.animIndex;
+        GetState(index).speed = pause ? 0 : 1;
+    }
+
     private void Update()
     {
         #region Test
         if (Input.GetKeyDown(KeyCode.A))
         {
-            Play(0).OnComplete(() => Debug.Log("Play 0")).NextPlay(1, true).OnComplete(() => Debug.Log("Play 1")).NextPlay(2).OnComplete(() => Debug.Log("On Complete"));
+            Play(0).OnComplete(() => Debug.Log("Play 0")).NextPlay(1, false).OnComplete(() => Debug.Log("Play 1")).NextPlay(2).OnComplete(null).OnComplete(() => Debug.Log("On Complete"));
         }
         if (Input.GetKeyDown(KeyCode.S))
         {
-            StopLoop();
+            Pause(true);
+        }
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            Pause(false);
         }
         #endregion
 
         if (!_run) return;
+        if (_pause) return;
         if (_loop || _time < _duration)
         {
             _time += Time.deltaTime;
@@ -230,7 +243,7 @@ public class AnimationObject : MonoBehaviour
     [ContextMenu("Go")]
     public void Go()
     {
-        Play(0).OnComplete(() => Debug.Log("Play 0")).NextPlay(1, true).OnComplete(() => Debug.Log("Play 1")).NextPlay(2).OnComplete(() => Debug.Log("On Complete"));
+        Play(0).OnComplete(() => Debug.Log("Play 0")).NextPlay(1, false).OnComplete(() => Debug.Log("Play 1")).NextPlay(2).OnComplete(null).OnComplete(() => Debug.Log("On Complete"));
     }
 
     [ContextMenu("Back")]
@@ -238,4 +251,6 @@ public class AnimationObject : MonoBehaviour
     {
         StopLoop();
     }
+
+
 }
