@@ -27,9 +27,9 @@ public class AnimationObject : MonoBehaviour
     private ActionNode _tailNode;
 
     private bool _run;
-    private bool _pause;
     private bool _loop;
-    private float _time;
+    private bool _pause;    
+    private float _timer;   // 主线计时器
     private float _duration;
 
     public ActionNode Current { get { return _headNode; } }
@@ -116,7 +116,7 @@ public class AnimationObject : MonoBehaviour
     {
         _run = true;
         _loop = loop;
-        _time = 0.0f;
+        _timer = 0.0f;
         _duration = duration;
     }
 
@@ -165,14 +165,14 @@ public class AnimationObject : MonoBehaviour
 
         if (!_run) return;
         if (_pause) return;
-        if (_loop || _time < _duration)
+        if (_loop || _timer < _duration)
         {
-            _time += Time.deltaTime;
+            _timer += Time.deltaTime;
         }
         else
         {
             _run = false;
-            _time = 0.0f;
+            _timer = 0.0f;
             _headNode.action?.Invoke();
         }
     }
