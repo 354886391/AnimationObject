@@ -7,6 +7,7 @@ public class ActionUtility : MonoBehaviour
 {
     private class ActionNode
     {
+        public float timer;
         public float length;
         public Action action;
         public ActionNode next;
@@ -38,38 +39,34 @@ public class ActionUtility : MonoBehaviour
     /// </summary>
     /// <param name="callback"></param>
     /// <returns></returns>
-    public ActionUtility Play()
+    public ActionUtility Play(float length, Action action)
     {
-        FirstNode();
+        FirstNode(length, action);
+        _headNode.action?.Invoke();
+        StartTimer();
         return this;
     }
 
-    public ActionUtility Next()
+    public ActionUtility Next(float length, Action action)
     {
-        AddNode();
+        AddNode(length, action);
         return this;
     }
 
-    public ActionUtility Delay()
+    public ActionUtility OnComplete(Action action)
     {
+        AddNode(0.0f, action);
         return this;
     }
 
-    public ActionUtility OnComplete()
+    private void FirstNode(float length, Action action)
     {
-        return this;
+        _headNode = _tailNode = new ActionNode(length, action, null);
     }
 
-    private void FirstNode(float length)
+    private void AddNode(float length, Action action)
     {
-        _headNode = _tailNode = new ActionNode(length, null, null);
-    }
-
-    private void AddNode(ActionNode node, Action action)
-    {
-        _tailNode.action = action;
-        _tailNode.next = node;
-        _tailNode = _tailNode.next;
+        _tailNode = _tailNode.next = new ActionNode(length, action, null);
     }
 
     private bool MoveNext()
@@ -82,12 +79,39 @@ public class ActionUtility : MonoBehaviour
         return false;
     }
 
+    private void StartTimer()
+    {
+        _run = true;
+        _pause = false;
+        _loop = false;
+        _runTimer = 0.0f;
+    }
+
+    private void PauseTimer()
+    {
+        _pause = true;
+    }
+
+    private void StopTimer()
+    {
+        _run = false;
+    }
 
     private void RunUpdate(float deltaTime)
     {
+        if (_headNode == null) return;
         if (_run)
         {
             _runTimer += deltaTime;
+            if (_headNode.timer < _headNode.length)
+            {
+                _headNode.timer += deltaTime;
+            }
+            else if (MoveNext())
+            {
+                _headNode.action?.Invoke();
+            }
+
             if (_loop)
             {
 
@@ -98,12 +122,23 @@ public class ActionUtility : MonoBehaviour
 
             }
         }
-
     }
 
     public virtual float GetLength()
     {
         return 0.0f;
+    }
+
+    private void Update()
+    {
+        RunUpdate(Time.deltaTime);
+    }
+
+
+    [ContextMenu("Test")]
+    private void Test()
+    {
+        Play(1f, () => Debug.Log("01 complete")).Next(2f, () => Debug.Log("02 complete")).Next(3f, () => Debug.Log("03 complete")).OnComplete(() => Debug.Log("All Complete"));
     }
 
 }
