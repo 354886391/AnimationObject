@@ -5,19 +5,70 @@ using UnityEngine;
 
 public class ActionUtility : MonoBehaviour
 {
-    private class ActionNode
+    private class Node
     {
+        public bool run;
         public float timer;
         public float length;
         public Action action;
-        public ActionNode next;
+        public Node next;
 
-        public ActionNode(float length, Action action, ActionNode next)
+        public Node(float timer, float length, Action action, Node next)
         {
+            this.timer = timer;
             this.length = length;
             this.action = action;
             this.next = next;
         }
+
+        /// <summary>
+        /// 执行 action 方法 并开启计时器
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        private void NodeStart()
+        {
+            if (!run)
+            {
+                run = true;
+                action?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// 节点计时器, 计时完毕后执行回调函数
+        /// </summary>
+        /// <param name="deltaTime"></param>
+        /// <param name="callback"></param>
+        public void NodeTimer(float deltaTime, Action<Node> callback)
+        {
+            NodeStart();
+            if (run)
+            {
+                if (length < 0) return;
+                if (timer < length)
+                {
+                    timer = Mathf.Min(timer + deltaTime, length);
+                }
+                else
+                {
+                    NodeEnd(callback);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 执行 callback 方法 并关闭计时器
+        /// </summary>
+        /// <param name="callback"></param>
+        private void NodeEnd(Action<Node> callback)
+        {
+            run = false;
+            timer = 0.0f;
+            length = 0.0f;
+            callback?.Invoke(this);
+        }
+
     }
 
     private bool _run;
@@ -28,10 +79,8 @@ public class ActionUtility : MonoBehaviour
     private float _pauseTimer;
     private float _length;
 
-    private ActionNode _headNode;
-    private ActionNode _tailNode;
-
-    private ActionNode Current { get => _headNode; }
+    private Node _headNode;
+    private Node _tailNode;
 
     /// <summary>
     /// 添加第一个节点
@@ -42,7 +91,6 @@ public class ActionUtility : MonoBehaviour
     public ActionUtility Play(float length, Action action)
     {
         FirstNode(length, action);
-        _headNode.action?.Invoke();
         StartTimer();
         return this;
     }
@@ -53,27 +101,21 @@ public class ActionUtility : MonoBehaviour
         return this;
     }
 
-    public ActionUtility OnComplete(Action action)
-    {
-        AddNode(0.0f, action);
-        return this;
-    }
-
     private void FirstNode(float length, Action action)
     {
-        _headNode = _tailNode = new ActionNode(length, action, null);
+        _headNode = _tailNode = new Node(0.0f, length, action, null);
     }
 
     private void AddNode(float length, Action action)
     {
-        _tailNode = _tailNode.next = new ActionNode(length, action, null);
+        _tailNode = _tailNode.next = new Node(0.0f, length, action, null);
     }
 
-    private bool MoveNext()
+    private bool MoveNext(Node current)
     {
-        if (_headNode.next != null)
+        if (current.next != null)
         {
-            _headNode = _headNode.next;
+            _headNode = current.next;
             return true;
         }
         return false;
@@ -97,24 +139,23 @@ public class ActionUtility : MonoBehaviour
         _run = false;
     }
 
-    private void RunUpdate(float deltaTime)
+    private void UpdateNode(float deltaTime)
     {
-        if (_headNode == null) return;
-        if (_run)
+        if (_run && _headNode != null)
         {
             _runTimer += deltaTime;
-            if (_headNode.timer < _headNode.length)
+            _headNode.NodeTimer(deltaTime, current =>
             {
-                _headNode.timer += deltaTime;
-            }
-            else if (MoveNext())
-            {
-                _headNode.action?.Invoke();
-            }
+                if (!MoveNext(current))
+                {
+                    _run = false;
+                    _runTimer = 0.0f;
+                }
+            });
 
             if (_loop)
             {
-
+                _headNode.length = -1f;
             }
 
             if (_pause)
@@ -131,14 +172,60 @@ public class ActionUtility : MonoBehaviour
 
     private void Update()
     {
-        RunUpdate(Time.deltaTime);
+        UpdateNode(Time.deltaTime);
+
+        #region Test
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            // 普通
+            PlayTest();
+        }
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            // 暂停
+            PlayTest();
+        }
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            // 继续
+            PlayTest();
+        }
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            // 终止
+            PlayTest();
+        }
+        ////////////////////////////////
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            // 循环
+            PlayLoopTest();
+        }
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            // 停止循环并继续
+            PlayTest();
+        }
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            // 停止循环并终止
+            PlayTest();
+        }
+        #endregion
+
     }
 
 
     [ContextMenu("Test")]
-    private void Test()
+    private void PlayTest()
     {
-        Play(1f, () => Debug.Log("01 complete")).Next(2f, () => Debug.Log("02 complete")).Next(3f, () => Debug.Log("03 complete")).OnComplete(() => Debug.Log("All Complete"));
+        Play(1f, () => Debug.Log("01 complete")).Next(2f, () => Debug.Log("02 complete")).Next(3f, () => Debug.Log("03 complete")).Next(0.0f, () => Debug.Log("All Complete"));
+    }
+
+    [ContextMenu("Test")]
+    private void PlayLoopTest()
+    {
+        Play(1f, () => Debug.Log("01 complete")).Next(-1f, () => Debug.Log("02 complete")).Next(3f, () => Debug.Log("03 complete")).Next(0.0f, () => Debug.Log("All Complete"));
     }
 
 }
