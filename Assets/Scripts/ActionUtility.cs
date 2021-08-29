@@ -86,18 +86,36 @@ public class ActionUtility : MonoBehaviour
     /// 添加第一个节点
     /// 启动主线计时器
     /// </summary>
-    /// <param name="callback"></param>
+    /// <param name="length">当length为 -1 时停留在当前节点</param>
+    /// <param name="action">执行当前节点的回调</param>
     /// <returns></returns>
     public ActionUtility Play(float length, Action action)
     {
         FirstNode(length, action);
-        StartTimer();
         return this;
     }
 
     public ActionUtility Next(float length, Action action)
     {
         AddNode(length, action);
+        return this;
+    }
+
+    public ActionUtility OnStart()
+    {
+        if (!_run) _run = true;
+        return this;
+    }
+
+    public ActionUtility OnPause()
+    {
+        if (_run) _pause = true;
+        return this;
+    }
+
+    public ActionUtility OnStop()
+    {
+        if (_run) _run = false;
         return this;
     }
 
@@ -119,24 +137,6 @@ public class ActionUtility : MonoBehaviour
             return true;
         }
         return false;
-    }
-
-    private void StartTimer()
-    {
-        _run = true;
-        _pause = false;
-        _loop = false;
-        _runTimer = 0.0f;
-    }
-
-    private void PauseTimer()
-    {
-        _pause = true;
-    }
-
-    private void StopTimer()
-    {
-        _run = false;
     }
 
     private void UpdateNode(float deltaTime)
@@ -177,55 +177,47 @@ public class ActionUtility : MonoBehaviour
         #region Test
         if (Input.GetKeyDown(KeyCode.A))
         {
-            // 普通
+            // 普通 A
             PlayTest();
         }
         if (Input.GetKeyDown(KeyCode.B))
         {
-            // 暂停
-            PlayTest();
+            // 暂停 B
+            PlayPauseTest();
         }
         if (Input.GetKeyDown(KeyCode.C))
         {
-            // 继续
-            PlayTest();
+            // 继续 C
+            _headNode.length = 0.0f;
         }
         if (Input.GetKeyDown(KeyCode.D))
         {
-            // 终止
-            PlayTest();
-        }
-        ////////////////////////////////
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            // 循环
-            PlayLoopTest();
-        }
-        if (Input.GetKeyDown(KeyCode.F))
-        {
-            // 停止循环并继续
-            PlayTest();
-        }
-        if (Input.GetKeyDown(KeyCode.G))
-        {
-            // 停止循环并终止
-            PlayTest();
+            // 终止 D
+            _run = false;
+            _headNode = null;
         }
         #endregion
 
     }
 
-
-    [ContextMenu("Test")]
+    [ContextMenu("Test1")]
     private void PlayTest()
     {
-        Play(1f, () => Debug.Log("01 complete")).Next(2f, () => Debug.Log("02 complete")).Next(3f, () => Debug.Log("03 complete")).Next(0.0f, () => Debug.Log("All Complete"));
+        Play(1f, () => Debug.Log("01 complete"))
+            .Next(2f, () => Debug.Log("02 complete"))
+            .Next(3f, () => Debug.Log("03 complete"))
+            .Next(0.0f, () => Debug.Log("All Complete"))
+            .OnStart();
     }
 
-    [ContextMenu("Test")]
-    private void PlayLoopTest()
+    [ContextMenu("Test2")]
+    private void PlayPauseTest()
     {
-        Play(1f, () => Debug.Log("01 complete")).Next(-1f, () => Debug.Log("02 complete")).Next(3f, () => Debug.Log("03 complete")).Next(0.0f, () => Debug.Log("All Complete"));
+        Play(1f, () => Debug.Log("01 complete"))
+            .Next(-1f, () => Debug.Log("02 complete"))
+            .Next(3f, () => Debug.Log("03 complete"))
+            .Next(0.0f, () => Debug.Log("All Complete"))
+            .OnStart();
     }
 
 }
