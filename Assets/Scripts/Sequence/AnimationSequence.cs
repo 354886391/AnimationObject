@@ -36,6 +36,17 @@ public class AnimationSequence : BaseSequence
     }
 
     /// <summary>
+    /// 执行回调
+    /// </summary>
+    /// <param name="action"></param>
+    /// <returns></returns>
+    public AnimationSequence Append(Action action)
+    {
+        BaseNext(0.0f, 0.0f, false, action);
+        return this;
+    }
+
+    /// <summary>
     /// 先延时再执行
     /// </summary>
     /// <param name="delay"></param>
@@ -166,8 +177,10 @@ public class AnimationSequence : BaseSequence
         Play(0)
             .Next(1)
             .Before(1f, () => Debug.Log("before 1 second"))
+            .Append(() => Debug.Log("before completed"))
             .Next(2)
-            .After(1f, () => Debug.Log("after 1 second"))
+            .Append(() => Debug.Log("after 1 second completed"))
+            .After(1f, () => Debug.Log("after completed"))
             .Next(3)
             ;
     }
