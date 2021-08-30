@@ -210,7 +210,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1472597420
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -220,7 +220,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1472597419}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c8b46b5e32cb95c4099b13937f4e26ea, type: 3}
+  m_Script: {fileID: 11500000, guid: c28fd3bc57bda8d4a95acc59ea60f42b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!4 &1472597421
@@ -309,13 +309,14 @@ GameObject:
   - component: {fileID: 6320856860177217689}
   - component: {fileID: 6320856860177217695}
   - component: {fileID: 6320856860177217696}
+  - component: {fileID: 6320856860177217697}
   m_Layer: 0
   m_Name: Quad
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!111 &6320856860177217695
 Animation:
   m_ObjectHideFlags: 0
@@ -342,13 +343,31 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6320856860177217694}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 34f6341417ed75145aa2cfc5d329ec8d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _animation: {fileID: 6320856860177217695}
   _animNames:
+  - Quad_L
+  - Quad_R
+  - Quad_U
+  - Quad_D
+--- !u!114 &6320856860177217697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6320856860177217694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18dbc13a20e637941bbadb47555f0919, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _animation: {fileID: 6320856860177217695}
+  _clipNames:
   - Quad_L
   - Quad_R
   - Quad_U
