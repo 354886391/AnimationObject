@@ -7,30 +7,22 @@ public abstract class BaseSequence : MonoBehaviour
 {
     private class Node
     {
-        public bool run;
-        public bool loop;
-        public float timer;
-        public float length;
-        public Action action;
+        private bool running;
+        public float runTimer;
+        public int loopTimer;
         public Node nextNode;
 
-        private float tempTimer;    // 缓存 timer 初始值
+        private int loopCount;
+        private float runLength;
+        private float tempTimer;    // 缓存 runTimer 初始值
+        private Action action;
 
-        public Node(float timer, float length, bool loop, Action action)
+        public Node(float timer, float length, int loopTime, Action action)
         {
-            this.timer = timer;
-            this.length = length;
-            this.loop = loop;
+            this.runTimer = timer;
+            this.runLength = length;
+            this.loopCount = loopTime;
             this.action = action;
-        }
-
-        public Node(float timer, float length, bool loop, Action action, Node next)
-        {
-            this.timer = timer;
-            this.length = length;
-            this.loop = loop;
-            this.action = action;
-            this.nextNode = next;
         }
 
         /// <summary>
@@ -41,14 +33,19 @@ public abstract class BaseSequence : MonoBehaviour
         public void NodeTimer(ref Node node, float deltaTime, Action<Node> callback)
         {
             NodeStart();
-            if (run)
+            if (running)
             {
-                if (length < 0) return;
-                if (tempTimer >= length)
+                if (runLength < 0) return;
+                if (tempTimer >= runLength)
                 {
-                    if (loop)
+                    // loopCount = -1 则无限循环, 每次循环都会调用NodeStart
+                    if (loopCount < 0 || loopTimer < loopCount)
                     {
-                        run = false;
+                        if (loopTimer < loopCount)
+                        {
+                            loopTimer++;
+                        }
+                        running = false;
                         NodeStart();
                         return;
                     }
@@ -57,7 +54,7 @@ public abstract class BaseSequence : MonoBehaviour
                 }
                 else
                 {
-                    tempTimer = Mathf.Min(tempTimer + deltaTime, length);
+                    tempTimer = Mathf.Min(tempTimer + deltaTime, runLength);
                 }
             }
         }
@@ -69,11 +66,11 @@ public abstract class BaseSequence : MonoBehaviour
         /// <param name="to"></param>
         private void NodeStart()
         {
-            if (!run)
+            if (!running)
             {
                 action?.Invoke();
-                run = true;
-                tempTimer = timer;
+                running = true;
+                tempTimer = runTimer;
             }
         }
 
@@ -84,10 +81,9 @@ public abstract class BaseSequence : MonoBehaviour
         private void NodeEnd(Action<Node> callback)
         {
             callback?.Invoke(this);
-            run = false;
-            loop = false;
-            timer = 0.0f;
-            length = 0.0f;
+            running = false;
+            loopTimer = 0;
+            runTimer = 0.0f;
         }
 
         /// <summary>
@@ -100,6 +96,17 @@ public abstract class BaseSequence : MonoBehaviour
             node = nextNode;
             return nextNode != null;
         }
+
+        public void Pause()
+        {
+            runLength = -1.0f;
+        }
+
+        public void Continue()
+        {
+            runLength = 0.0f;
+            loopCount = 0;
+        }
     }
 
     private float _runTimer;
@@ -111,12 +118,12 @@ public abstract class BaseSequence : MonoBehaviour
     /// </summary>
     /// <param name="from"></param>
     /// <param name="to">当to为 -1 时停留在当前节点</param>
-    /// <param name="loop"></param>
+    /// <param name="loops"></param>
     /// <param name="action">执行当前节点的回调(进入时即执行)</param>
     /// <returns></returns>
-    public BaseSequence BasePlay(float from, float to, bool loop, Action action)
+    public BaseSequence BasePlay(float from, float to, int loops, Action action)
     {
-        FirstNode(from, to, loop, action);
+        FirstNode(from, to, loops, action);
         return this;
     }
 
@@ -125,23 +132,23 @@ public abstract class BaseSequence : MonoBehaviour
     /// </summary>
     /// <param name="from"></param>
     /// <param name="to"></param>
-    /// <param name="loop"></param>
+    /// <param name="loops"></param>
     /// <param name="action"></param>
     /// <returns></returns>
-    public BaseSequence BaseNext(float from, float to, bool loop, Action action)
+    public BaseSequence BaseNext(float from, float to, int loops, Action action)
     {
-        AddNode(from, to, loop, action);
+        AddNode(from, to, loops, action);
         return this;
     }
 
-    private void FirstNode(float from, float to, bool loop, Action action)
+    private void FirstNode(float from, float to, int loops, Action action)
     {
-        _headNode = _tailNode = new Node(from, to, loop, action); //Todo ObjectPool
+        _headNode = _tailNode = new Node(from, to, loops, action); //Todo ObjectPool
     }
 
-    private void AddNode(float from, float to, bool loop, Action action)
+    private void AddNode(float from, float to, int loops, Action action)
     {
-        _tailNode = _tailNode.nextNode = new Node(from, to, loop, action);
+        _tailNode = _tailNode.nextNode = new Node(from, to, loops, action);
     }
 
     protected void UpdateNode(float deltaTime)
@@ -153,10 +160,14 @@ public abstract class BaseSequence : MonoBehaviour
         }
     }
 
+    public void Pause()
+    {
+        _headNode.Pause();
+    }
+
     public void Continue()
     {
-        _headNode.loop = false;
-        _headNode.length = 0.0f;
+        _headNode.Continue();
     }
 
     public void Release()

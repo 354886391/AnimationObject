@@ -8,25 +8,25 @@ public class TimerSequence : BaseSequence
 
     public TimerSequence Play(float length, Action action)
     {
-        BasePlay(0.0f, length, false, action);
+        BasePlay(0.0f, length, 0, action);
         return this;
     }
 
-    public TimerSequence Play(float length, bool loop, Action action)
+    public TimerSequence Play(float length, int loops, Action action)
     {
-        BasePlay(0.0f, length, loop, action);
+        BasePlay(0.0f, length, loops, action);
         return this;
     }
 
     public TimerSequence Next(float length, Action action)
     {
-        BaseNext(0.0f, length, false, action);
+        BaseNext(0.0f, length, 0, action);
         return this;
     }
 
-    public TimerSequence Next(float length, bool loop, Action action)
+    public TimerSequence Next(float length, int loops, Action action)
     {
-        BaseNext(0.0f, length, loop, action);
+        BaseNext(0.0f, length, loops, action);
         return this;
     }
 
@@ -88,9 +88,9 @@ public class TimerSequence : BaseSequence
     [ContextMenu("Test3")]
     private void PlayLoopTest()
     {
-        Play(1f, () => Debug.Log("01 loop"))
-            .Next(2f, () => Debug.Log("02 loop"))
-            .Next(3f, true, () => Debug.Log("03 loop"))
+        Play(1f, () => Debug.Log("01 loops"))
+            .Next(2f, () => Debug.Log("02 loops"))
+            .Next(3f, -1, () => Debug.Log("03 loops"))
             .Next(0.0f, () => Debug.Log("All complete"))
             ;
     }

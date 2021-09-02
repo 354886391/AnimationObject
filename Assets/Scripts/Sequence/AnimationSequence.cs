@@ -13,13 +13,14 @@ public class AnimationSequence : BaseSequence
 
     public AnimationSequence Play(float length, Action action)
     {
-        BasePlay(0.0f, length, false, action);
+        BasePlay(0.0f, length, 0, action);
         return this;
     }
 
-    public AnimationSequence Play(int index, float speed = 1.0f, bool loop = false)
+    /// <param name="loops"> -1 则无限循环</param>
+    public AnimationSequence Play(int index, float speed = 1.0f, int loops = 0)
     {
-        BasePlay(0.0f, GetLength(index), loop, () => Animate(index, speed, loop));
+        BasePlay(0.0f, GetLength(index, speed), loops, () => Animate(index, speed, loops));
         return this;
     }
 
@@ -31,7 +32,7 @@ public class AnimationSequence : BaseSequence
     /// <returns></returns>
     public AnimationSequence Before(float delay, Action action)
     {
-        BaseNext(0.0f, delay, false, action);
+        BaseNext(0.0f, delay, 0, action);
         return this;
     }
 
@@ -42,7 +43,7 @@ public class AnimationSequence : BaseSequence
     /// <returns></returns>
     public AnimationSequence Append(Action action)
     {
-        BaseNext(0.0f, 0.0f, false, action);
+        BaseNext(0.0f, 0.0f, 0, action);
         return this;
     }
 
@@ -54,13 +55,14 @@ public class AnimationSequence : BaseSequence
     /// <returns></returns>
     public AnimationSequence After(float delay, Action action)
     {
-        BaseNext(0.0f, delay, false, null).BaseNext(0.0f, 0.0f, false, action);
+        BaseNext(0.0f, delay, 0, null).BaseNext(0.0f, 0.0f, 0, action);
         return this;
     }
 
-    public AnimationSequence Next(int index, float speed = 1.0f, bool loop = false)
+    /// <param name="loops"> -1 则无限循环</param>
+    public AnimationSequence Next(int index, float speed = 1.0f, int loops = 0)
     {
-        BaseNext(0.0f, GetLength(index), loop, () => Animate(index, speed, loop));
+        BaseNext(0.0f, GetLength(index, speed), loops, () => Animate(index, speed, loops));
         return this;
     }
 
@@ -87,11 +89,11 @@ public class AnimationSequence : BaseSequence
         return strList;
     }
 
-    private void Animate(int index, float speed, bool loop)
+    private void Animate(int animIndex, float speed, int loops)
     {
-        var state = GetState(index);
+        var state = GetState(animIndex);
         state.speed = speed;
-        state.wrapMode = !loop ? WrapMode.Once : WrapMode.Loop;
+        state.wrapMode = WrapMode.Once;
         _animation.Play(state.clip.name);
     }
 
@@ -110,9 +112,9 @@ public class AnimationSequence : BaseSequence
         return _animation[_clipNames[animIndex]].clip;
     }
 
-    private float GetLength(int animIndex)
+    private float GetLength(int animIndex, float speed)
     {
-        return _animation[_clipNames[animIndex]].length;
+        return _animation[_clipNames[animIndex]].length / speed;
     }
 
     private void SetSpeed(int animIndex, float speed = 1.0f)
@@ -190,8 +192,8 @@ public class AnimationSequence : BaseSequence
     {
         Play(0)
             .Next(1)
-            .Next(2, 2.0f, false)
-            .Next(3, 2.0f, false)
+            .Next(2, 2.0f)
+            .Next(3, 2.0f)
             ;
     }
 
@@ -200,7 +202,7 @@ public class AnimationSequence : BaseSequence
     {
         Play(0)
             .Next(1)
-            .Next(2, 1.0f, true)
+            .Next(2, 1.0f, -1)
             .Next(3)
             ;
     }
